@@ -40,7 +40,7 @@ def generate_auto_descriptors(filename):
     found = [k.capitalize() for k in keywords if k in filename]
     descriptors.extend(found)
 
-    return descriptors[:5]
+    return descriptors[:5]  # Ensure max of 5 descriptors
 
 # Streamlit UI
 st.set_page_config(page_title="Nothink Creative Asset Naming", layout="wide")
@@ -114,7 +114,7 @@ if uploaded_files:
         if use_smart_naming:
             auto_parts = generate_auto_descriptors(file.name)
             if auto_parts:
-                creative_final += "_" + "_".join(auto_parts)
+                creative_final += "_" + "_".join(auto_parts[:5])  # Limit to 5 descriptors
 
         if creative_final:
             name_parts.append(creative_final)
