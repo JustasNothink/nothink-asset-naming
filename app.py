@@ -3,9 +3,8 @@ import os
 import zipfile
 from io import BytesIO
 from datetime import datetime
-from tag_library import tags  # ✅ Make sure you have this file with your master tag list
 
-# --- Week logic ---
+# Week number logic
 def calculate_week_number():
     start = datetime(2024, 12, 30)
     today = datetime.today()
@@ -13,23 +12,15 @@ def calculate_week_number():
     week_num = (delta.days // 7) + 1
     return f"WK{week_num}"
 
-# --- Smart tag matching from filename ---
+# Smart descriptor extraction from filename directly (no external tag list)
 def generate_auto_descriptors(filename):
-    filename = os.path.splitext(filename)[0]  # remove .jpg or .png
+    filename = os.path.splitext(filename)[0]  # remove file extension
     parts = filename.replace("-", "_").replace(" ", "_").split("_")
-    parts = [p.strip().lower() for p in parts if p.strip()]
+    # Strip numbers like "1_", "2_", etc.
+    parts = [p.strip() for p in parts if p.strip() and not p.isdigit()]
+    return parts[:5]  # Limit to first 5 descriptors
 
-    matched_tags = []
-    for tag in tags:
-        tag_lower = tag.lower()
-        if tag_lower in parts:
-            matched_tags.append(tag)
-        elif any(tag_lower == "_".join(parts[i:i+2]) for i in range(len(parts)-1)):
-            matched_tags.append(tag)
-
-    return matched_tags[:5]
-
-# --- Streamlit UI ---
+# Streamlit UI
 st.set_page_config(page_title="Nothink Creative Asset Naming", layout="wide")
 st.title("✨ Nothink Creative Asset Naming")
 
@@ -95,7 +86,7 @@ if uploaded_files:
             asset_number
         ]
 
-        # --- Combine manual + smart tags cleanly ---
+        # Combine manual and smart descriptors cleanly
         manual_part = creative_manual.strip().replace(" ", "_")
         auto_parts = generate_auto_descriptors(file.name) if use_smart_naming else []
         combined_parts = [p for p in [manual_part] + auto_parts if p]
