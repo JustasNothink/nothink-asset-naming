@@ -3,6 +3,7 @@ import os
 import zipfile
 from io import BytesIO
 from datetime import datetime
+from tag_library import tags  # <-- your master tag list of 1000–100,000 tags
 
 # Week number logic
 def calculate_week_number():
@@ -12,35 +13,11 @@ def calculate_week_number():
     week_num = (delta.days // 7) + 1
     return f"WK{week_num}"
 
-# Generate descriptors from filename (lightweight smart naming)
+# Smart descriptor matcher from filename using full tag library
 def generate_auto_descriptors(filename):
-    descriptors = []
     filename = filename.lower()
-
-    # Ad type
-    if "testimonial" in filename:
-        descriptors.append("Testimonial")
-    elif "before" in filename or "after" in filename:
-        descriptors.append("BeforeAfter")
-    elif "calendar" in filename:
-        descriptors.append("Calendar")
-    elif "types" in filename:
-        descriptors.append("Types")
-
-    # Actor
-    if "female" in filename or "woman" in filename:
-        descriptors.append("Female")
-    elif "male" in filename or "man" in filename:
-        descriptors.append("Male")
-    elif "drawn" in filename:
-        descriptors.append("Drawn")
-
-    # Keywords for angle
-    keywords = ["cortisol", "sleep", "weightloss", "hormones", "pcos", "bloating", "energy", "fatty", "liver"]
-    found = [k.capitalize() for k in keywords if k in filename]
-    descriptors.extend(found)
-
-    return descriptors[:5]  # Ensure max of 5 descriptors
+    matches = [tag for tag in tags if tag.lower() in filename]
+    return matches[:5]  # Return up to 5 matches in tag order
 
 # Streamlit UI
 st.set_page_config(page_title="Nothink Creative Asset Naming", layout="wide")
@@ -114,7 +91,7 @@ if uploaded_files:
         if use_smart_naming:
             auto_parts = generate_auto_descriptors(file.name)
             if auto_parts:
-                creative_final += "_" + "_".join(auto_parts[:5])  # Limit to 5 descriptors
+                creative_final += "_" + "_".join(auto_parts)
 
         if creative_final:
             name_parts.append(creative_final)
