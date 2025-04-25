@@ -3,9 +3,9 @@ import os
 import zipfile
 from io import BytesIO
 from datetime import datetime
-from tag_library import tags  # <-- your master tag list of 1000–100,000 tags
+from tag_library import tags  # ✅ Make sure you have this file with your master tag list
 
-# Week number logic
+# --- Week logic ---
 def calculate_week_number():
     start = datetime(2024, 12, 30)
     today = datetime.today()
@@ -13,13 +13,23 @@ def calculate_week_number():
     week_num = (delta.days // 7) + 1
     return f"WK{week_num}"
 
-# Smart descriptor matcher from filename using full tag library
+# --- Smart tag matching from filename ---
 def generate_auto_descriptors(filename):
-    filename = filename.lower()
-    matches = [tag for tag in tags if tag.lower() in filename]
-    return matches[:5]  # Return up to 5 matches in tag order
+    filename = os.path.splitext(filename)[0]  # remove .jpg or .png
+    parts = filename.replace("-", "_").replace(" ", "_").split("_")
+    parts = [p.strip().lower() for p in parts if p.strip()]
 
-# Streamlit UI
+    matched_tags = []
+    for tag in tags:
+        tag_lower = tag.lower()
+        if tag_lower in parts:
+            matched_tags.append(tag)
+        elif any(tag_lower == "_".join(parts[i:i+2]) for i in range(len(parts)-1)):
+            matched_tags.append(tag)
+
+    return matched_tags[:5]
+
+# --- Streamlit UI ---
 st.set_page_config(page_title="Nothink Creative Asset Naming", layout="wide")
 st.title("✨ Nothink Creative Asset Naming")
 
@@ -28,7 +38,6 @@ uploaded_files = st.file_uploader("📁 Upload Your Assets", accept_multiple_fil
 st.subheader("📝 Naming Options")
 
 col1, col2, col3 = st.columns([1, 1, 2])
-
 with col1:
     product = st.selectbox("Product", ["HARMONIA - HM", "YOURSELFIRST - YF", "DIGESTI - DG"])
     product_code = product.split(" - ")[1]
@@ -86,15 +95,12 @@ if uploaded_files:
             asset_number
         ]
 
-        # Combine manual and smart descriptors
-        creative_final = creative_manual.strip().replace(" ", "_")
-        if use_smart_naming:
-            auto_parts = generate_auto_descriptors(file.name)
-            if auto_parts:
-                creative_final += "_" + "_".join(auto_parts)
-
-        if creative_final:
-            name_parts.append(creative_final)
+        # --- Combine manual + smart tags cleanly ---
+        manual_part = creative_manual.strip().replace(" ", "_")
+        auto_parts = generate_auto_descriptors(file.name) if use_smart_naming else []
+        combined_parts = [p for p in [manual_part] + auto_parts if p]
+        if combined_parts:
+            name_parts.append("_".join(combined_parts))
 
         name_parts.extend([format_option, type_option])
         final_name = "_".join([p for p in name_parts if p]) + ext
